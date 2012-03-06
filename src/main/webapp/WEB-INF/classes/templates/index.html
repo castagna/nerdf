@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>NERDF: Named Entity Recognition (NER) + RDF</title>
+</head>
+<body style="margin-left: 40px; margin-right: 40px;">
+<h1>NERDF: Named Entity Recognition (NER) + RDF</h1>
+
+<form name="input" action="index.html" method="post">
+<textarea name="text" rows="10" style="width:100%;">#if($text)$text#else
+The Wicker Man is a 1973 British film combining thriller and horror genres, directed by Robin Hardy and written by Anthony Shaffer. The film stars Edward Woodward, Christopher Lee, Diane Cilento, Ingrid Pitt, and Britt Ekland. Paul Giovanni composed the soundtrack. The film is now considered a cult classic.
+
+Inspired by the basic scenario of David Pinner's 1967 novel The Ritual, the story centres on the visit of Police Sergeant Neil Howie to the isolated island of Summerisle, in search of a missing girl the locals claim never existed. Howie is a devout Christian, and is appalled by a religion loosely inspired by Celtic paganism practiced by the inhabitants of the island.
+
+The Wicker Man is generally well regarded by critics and film enthusiasts. Film magazine Cinefantastique described it as "The Citizen Kane of Horror Movies", and during 2004 the magazine Total Film named The Wicker Man the sixth greatest British film of all time. It also won the 1978 Saturn Award for Best Horror Film. A scene from this film was #45 on Bravo's 100 Scariest Movie Moments.
+
+In his 2010 BBC documentary series A History of Horror, writer and actor Mark Gatiss referred to the film as a prime example of a short-lived sub-genre he called "folk horror", grouping it with 1968's Witchfinder General and 1971's Blood on Satan's Claw.
+
+An ill received 2006 Canadian/German/American remake was produced, from which Robin Hardy and others involved with the original have disassociated themselves.
+
+The Wicker Tree, a "spiritual sequel" also directed by Hardy, was released in 2011. Christopher Lee has publicly stated that The Wicker Tree is in no way related to The Wicker Man.#end
+</textarea> 
+<input type="submit" value="Submit" />
+</form>
+
+#if($result)<p>$result</p>#end
+
+</body>
+</html>

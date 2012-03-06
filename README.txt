@@ -24,3 +24,17 @@
   
     mvn jetty:run
     firefox http://127.0.0.1:8080/index.html
+
+  This is just a small, quick and dirty, proof of concept (and the name
+  isn't great on purpose), there are many (and much better) similar services
+  out there, for example:
+
+   - http://www.opencalais.com/
+   - http://www.zemanta.com/
+   - http://tagme.di.unipi.it/
+   - http://dbpedia.org/spotlight
+   - ...
+
+  But, they don't give you the source code and they do not work with *your*
+  data. ;-)
+

@@ -10,7 +10,11 @@
     <servlet-class>com.kasabi.labs.nerdf.NERDFServlet</servlet-class>
     <init-param>
       <param-name>tdb.location</param-name>
-      <param-value>/tmp/nerdf/target/tdb</param-value>
+      <param-value>data.tsv.gz,/tmp/nerdf/target/tdb,http://api.kasabi.com/dataset/italy/apis/sparql,http://api.kasabi.com/dataset/nasa/apis/sparql</param-value>
+      <!--
+           You can point to a TDB location: /tmp/nerdf/target/tdb
+           Or, to a SPARQL endpoint: http://api.kasabi.com/dataset/italy/apis/sparql
+      -->
     </init-param>
   </servlet>
 

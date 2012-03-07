@@ -20,6 +20,7 @@ package com.kasabi.labs.nerdf;
 
 import java.util.Set;
 
+import org.openjena.atlas.logging.ProgressLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,29 +40,41 @@ public class LingPipeLinker {
 	private MapDictionary<String> dictionary = new MapDictionary<String>();
 	private ExactDictionaryChunker chunker;
 	
+	public LingPipeLinker() {
+		log.debug("LingPipeLinker()");
+	}
+
 	public LingPipeLinker ( ResultSet rs ) {
 		log.debug("LingPipeLinker({})", rs);
 		load ( rs );
-		chunker = new ExactDictionaryChunker(dictionary, IndoEuropeanTokenizerFactory.INSTANCE, true, false);
 	}
 
 	public Set<Chunk> link ( String text ) {
 		log.debug("link({}...)", text.substring(0, 40));
+		
+		if ( chunker == null ) {
+			chunker = new ExactDictionaryChunker(dictionary, IndoEuropeanTokenizerFactory.INSTANCE, true, false);
+		}
+		
 		Chunking chunking = chunker.chunk(text);
 		return chunking.chunkSet();
 	}
 	
-	private void load ( ResultSet rs ) {
+	public void load ( ResultSet rs ) {
+		ProgressLogger progress = new ProgressLogger(log, "", 1000, 10000);
+		progress.start();
 		while ( rs.hasNext() ) {
 			QuerySolution qs = rs.next();
 			String label = qs.getLiteral("label").getLexicalForm();
-			if ( label.length() > 4 ) {
+			if ( label.length() > 1 ) {
 				String uri = qs.getResource("uri").getURI();
 				String type = qs.getResource("type").getURI();
-				dictionary.addEntry(new DictionaryEntry<String>(label, type + "\t" + uri, new Double(label.length())));				
+				dictionary.addEntry(new DictionaryEntry<String>(label, type + "\t" + uri, new Double(label.length())));
+				progress.tick();
 			}
 		}
-		log.debug ("load({}), added {} entries to the dictionary.", rs, dictionary.size());
+		progress.finish();
+		log.debug ("load({}), dictionary now has {} entries", rs, dictionary.size());
 	}
 	
 }

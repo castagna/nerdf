@@ -4,13 +4,11 @@ PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 SELECT ?label ?type ?uri WHERE {
   {
     ?uri a ?type .
-    ?uri rdfs:label ?l .
-    BIND ( STR (?l) AS ?label ) # ignore the language tag
+    ?uri rdfs:label ?label .
   }
   UNION
   {
     ?uri a ?type .
-    ?uri foaf:name ?l .
-    BIND ( STR (?l) AS ?label ) # ignore the language tag
+    ?uri foaf:name ?label .
   }
 }

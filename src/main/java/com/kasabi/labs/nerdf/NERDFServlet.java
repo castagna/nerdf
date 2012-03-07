@@ -18,10 +18,14 @@
 
 package com.kasabi.labs.nerdf;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -49,6 +53,8 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.sparql.engine.http.QueryEngineHTTP;
+import com.hp.hpl.jena.sparql.resultset.TSVInput;
 import com.hp.hpl.jena.tdb.TDBFactory;
 import com.hp.hpl.jena.tdb.base.file.Location;
 import com.hp.hpl.jena.util.FileManager;
@@ -56,12 +62,15 @@ import com.hp.hpl.jena.util.FileManager;
 @SuppressWarnings("serial")
 public class NERDFServlet extends HttpServlet {
 
-	private static Logger vlog = LoggerFactory.getLogger("Velocity");
-	private static LogChute velocityLog = new NullLogChute();
+	private static final Logger log = LoggerFactory.getLogger(NERDFServlet.class) ;
+	private static final Logger vlog = LoggerFactory.getLogger("Velocity");
+	private static final LogChute velocityLog = new NullLogChute();
 	private final VelocityEngine velocity = new VelocityEngine();
-	private LingPipeLinker linker;
+	private final LingPipeLinker linker;
+	private final String kasabi_api_key = System.getenv("KASABI_API_KEY");
 
 	public NERDFServlet() {
+		log.debug("NERDFServlet()");
 		velocity.setProperty(RuntimeConstants.RUNTIME_LOG_LOGSYSTEM, velocityLog);
 		velocity.setProperty(RuntimeConstants.INPUT_ENCODING, "UTF-8");
 		velocity.setProperty(RuntimeConstants.RESOURCE_LOADER, "file,class");
@@ -70,22 +79,68 @@ public class NERDFServlet extends HttpServlet {
 		velocity.setProperty("class.resource.loader.class", org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader.class.getName());
 		velocity.setProperty("class.resource.loader.path", "/templates");
 		velocity.init();
+
+	    linker = new LingPipeLinker();
 	}
 
 	@Override
 	public void init() throws ServletException {
-	    String value = getServletConfig().getInitParameter("tdb.location");
-		FileManager fm = FileManager.get();
-	    Location location = new Location(value);
-	    Dataset dataset = TDBFactory.createDataset(location);
+		log.debug("init()");
+	    String[] values = getServletConfig().getInitParameter("tdb.location").split(",");
+
+	    FileManager fm = FileManager.get();
 	    Query query = QueryFactory.read("/queries/namedentities.rq", fm, null, Syntax.syntaxSPARQL);
-	    QueryExecution qexec = QueryExecutionFactory.create(query, dataset);
-	    try {
-	    	ResultSet results = qexec.execSelect();
-		    linker = new LingPipeLinker ( results );
-	    } finally { 
-	    	qexec.close(); 
-	    }
+	    log.debug("init(): query {}", query);
+
+	    for (String value : values) {
+	    	log.debug("init() processing {} ...", value);
+	    	QueryExecution qexec = null;
+	    	if ( value.startsWith("http") ) {
+	    		qexec = QueryExecutionFactory.sparqlService(value, query);
+	    		if ( value.startsWith("http://api.kasabi.com/") ) {
+	    			if ( kasabi_api_key != null ) {
+		    			((QueryEngineHTTP)qexec).addParam("apikey", kasabi_api_key);	
+	    			} else {
+	    				log.warn ("init(): skipping {}, please provide your Kasabi API key setting the KASABI_API_KEY env variable");
+	    				continue;
+	    			}
+	    		}
+	    	} else {
+	    		File path = new File(value);
+	    		if ( path.exists() ) {
+	    			if ( path.isDirectory() ) {
+					    Location location = new Location(value);
+					    Dataset dataset = TDBFactory.createDataset(location);
+					    qexec = QueryExecutionFactory.create(query, dataset);	    				
+	    			} else {
+	    				if ( value.endsWith(".tsv") || value.endsWith(".tsv.gz") ) {
+	    					try {
+	    						InputStream in = new FileInputStream(value);
+	    						if ( value.endsWith(".gz") ) {
+	    							in = new GZIPInputStream(in);
+	    						}
+								linker.load(TSVInput.fromTSV(in));
+							} catch (Exception e) {
+						    	log.error (e.getMessage(), e);
+							}
+	    					continue;
+	    				}
+	    			}
+	    		} else {
+	    			log.warn("init(): path {} does not exist.", path);
+	    		}
+	    	}
+	    	if ( qexec != null ) {
+			    try {
+			    	ResultSet results = qexec.execSelect();
+				    linker.load(results);
+			    } catch ( Exception e ) {
+			    	log.error (e.getMessage(), e);
+			    } finally { 
+			    	qexec.close(); 
+			    }	    		
+	    	}
+		}	    
 	}
 	
 	@Override
